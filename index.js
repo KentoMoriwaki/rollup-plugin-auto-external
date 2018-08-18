@@ -43,10 +43,6 @@ module.exports = ({
       return ids.includes(packageName);
     };
 
-    if (Array.isArray(opts.external)) {
-      external = Array.from(new Set(opts.external.concat(ids)));
-    }
-
     return Object.assign({}, opts, { external });
   }
 });
