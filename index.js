@@ -1,15 +1,15 @@
-const getBuiltins = require('builtins');
-const readPkg = require('read-pkg');
-const safeResolve = require('safe-resolve');
-const semver = require('semver');
+const getBuiltins = require("builtins");
+const readPkg = require("read-pkg");
+const safeResolve = require("safe-resolve");
+const semver = require("semver");
 
 module.exports = ({
   builtins = true,
   dependencies = true,
   packagePath,
-  peerDependencies = true,
+  peerDependencies = true
 } = {}) => ({
-  name: 'auto-external',
+  name: "auto-external",
   options(opts) {
     const pkg = readPkg.sync(packagePath);
     let ids = [];
@@ -26,21 +26,27 @@ module.exports = ({
       ids = ids.concat(getBuiltins(semver.valid(builtins)));
     }
 
-    let external = ids;
+    let external = id => {
+      if (
+        (typeof opts.external === "function" && opts.external(id)) ||
+        (Array.isArray(opts.external) && opts.external.includes(id))
+      ) {
+        return true;
+      }
 
-    if (typeof opts.external === 'function') {
-      external = id =>
-        opts.external(id) ||
-        ids
-          .map(safeResolve)
-          .filter(Boolean)
-          .includes(id);
-    }
+      const isScopedPackage = id.startsWith("@");
+      const packageName = id
+        .split("/")
+        .slice(0, isScopedPackage ? 2 : 1)
+        .join("/");
+
+      return ids.includes(packageName);
+    };
 
     if (Array.isArray(opts.external)) {
       external = Array.from(new Set(opts.external.concat(ids)));
     }
 
     return Object.assign({}, opts, { external });
-  },
+  }
 });
